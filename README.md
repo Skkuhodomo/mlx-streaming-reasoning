@@ -33,7 +33,7 @@ Both models are optimized for MLX and run efficiently on Apple Silicon devices.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/mlx-ui.git
+   git clone https://github.com/Skkuhodomo/mlx-streaming-reasoning
    cd mlx-ui
    ```
 
