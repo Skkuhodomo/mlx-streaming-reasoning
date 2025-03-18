@@ -96,11 +96,3 @@ You can customize the application by:
 2. Changing the models in the `MODELS` dictionary
 3. Adjusting the UI styles in the CSS section
 
-## License
-
-[Your License Here]
-
-## Acknowledgements
-
-- MLX Team for the model inference library
-- Streamlit for the web app framework
