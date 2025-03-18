@@ -1,4 +1,4 @@
-# MLX Chat UI
+# MLX Chat UI with Reasoning Models
 
 A sleek, dark-themed chat interface for MLX models with support for reasoning mode.
 ![fig](screenshot.png)
