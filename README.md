@@ -1,7 +1,7 @@
 # MLX Chat UI
 
 A sleek, dark-themed chat interface for MLX models with support for reasoning mode.
-
+![fig](screenshot.png)
 ## Features
 
 - **Dual Model Support**: Switch between standard chat mode and reasoning mode
