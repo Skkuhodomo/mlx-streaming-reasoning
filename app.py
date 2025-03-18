@@ -9,13 +9,13 @@ title = "MLX Chat"
 ver = "0.8"
 debug = False
 
-# 모델 정의
+# Model definitions
 MODELS = {
     "reasoning": "mlx-community/QwQ-32B-4bit",
     "chat": "mlx-community/EXAONE-3.5-2.4B-Instruct-4bit"
 }
 
-# 시스템 프롬프트 정의
+# System prompt definitions
 SYSTEM_PROMPTS = {
     "reasoning": """You are a helpful AI assistant that shows your reasoning process.
 When you need to think about something, wrap your thoughts in <think> tags.
@@ -30,20 +30,20 @@ Your final answer should be concise and clear.""",
 }
 
 def extract_think_content(text):
-    """<think> 태그 내의 내용을 추출합니다."""
+    """Extract content from within <think> tags."""
     pattern = r'<think>(.*?)</think>'
     matches = re.finditer(pattern, text, re.DOTALL)
     results = [match.group(1).strip() for match in matches]
     return results
 
 def remove_think_tags(text):
-    """<think> 태그를 제거합니다."""
+    """Remove <think> tags from the text."""
     return re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
 
 def generate(the_prompt, the_model, the_tokenizer):
     tokens = []
     skip = 0
-    # context 길이 제한 없이 generate_step에서 반환하는 모든 토큰 처리
+    # Process all tokens returned by generate_step without context length limit
     for (token, prob) in generate_step(mx.array(the_tokenizer.encode(the_prompt)), the_model, max_tokens=-1):
         if token == the_tokenizer.eos_token_id:
             break
@@ -53,7 +53,7 @@ def generate(the_prompt, the_model, the_tokenizer):
         trim = None
         for sw in STOP_TOKENS:
             if text[-len(sw):].lower() == sw:
-                # 종료어 발견 시 생성 중단
+                # Stop generation if end token is found
                 return
             else:
                 for i, _ in enumerate(sw, start=1):
@@ -63,7 +63,7 @@ def generate(the_prompt, the_model, the_tokenizer):
         skip = len(text)
 
 def show_chat(the_prompt, previous=""):
-    # 메시지 생성 시점의 모델 종류는 st.session_state["model_type"]에서 가져옴.
+    # Get model type at generation time from session state
     current_model_type = st.session_state["model_type"]
     active_reasoning_mode = (current_model_type == "reasoning")
     st.session_state["is_generating"] = True
@@ -75,11 +75,11 @@ def show_chat(the_prompt, previous=""):
     current_model, current_tokenizer = get_model(current_model_type)
 
     with st.chat_message("assistant"):
-        # UI 순서: 1) 사고 과정(expander, reasoning 모드일 경우), 2) 최종 답변
+        # UI order: 1) Thinking process (expander, for reasoning mode), 2) Final answer
         thinking_expander = None
         thinking_placeholder = None
         if active_reasoning_mode:
-            thinking_expander = st.expander("🤔 AI의 사고 과정", expanded=False)
+            thinking_expander = st.expander("🤔 AI's Thinking Process", expanded=False)
             thinking_placeholder = thinking_expander.empty()
         final_answer_placeholder = st.empty()
 
@@ -89,14 +89,14 @@ def show_chat(the_prompt, previous=""):
         in_thinking_mode = active_reasoning_mode
         has_thinking = False
 
-        # 업데이트 최적화 변수들
+        # Update optimization variables
         last_update_time = time.time()
         update_interval = 0.1
         min_buffer_size = 150
         thinking_buffer = ""
         last_thinking_update = ""
 
-        # 문단 경계 패턴
+        # Paragraph boundary patterns
         paragraph_markers = ["\n\n", "\n", ".", "!", "?", ":", ";"]
 
         chunks_accumulated = []
@@ -223,10 +223,10 @@ def get_chat_template(tokenizer_obj):
 def has_system_role_support(chat_template_str):
     return "system role not supported" not in chat_template_str.lower()
 
-# 종료 토큰
+# End tokens
 STOP_TOKENS = ["<|im_start|>", "<|im_end|>", "<s>", "</s>"]
 
-assistant_greeting = "안녕하세요! 무엇을 도와드릴까요?"
+assistant_greeting = "Hello! How can I help you today?"
 
 st.set_page_config(
     page_title=title,
@@ -235,19 +235,19 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# (스타일 코드는 생략 가능)
+# (Style code omitted for brevity)
 st.markdown("""
 <style>
-/* 스타일 코드 (생략) */
+/* Style code (omitted) */
 </style>
 """, unsafe_allow_html=True)
 
 st.title(title)
 st.markdown(r"<style>.stDeployButton{display:none}</style>", unsafe_allow_html=True)
 
-# 세션 상태 초기화
+# Initialize session state
 if "model_type" not in st.session_state:
-    st.session_state["model_type"] = "chat"  # 실제 적용 모델 (send 시 반영)
+    st.session_state["model_type"] = "chat"  # The actual model to use (applied when sending)
 if "messages" not in st.session_state:
     st.session_state["messages"] = [{"role": "assistant", "content": assistant_greeting}]
 
@@ -255,7 +255,7 @@ if "messages" not in st.session_state:
 def load_model_and_cache(ref):
     return load(ref, {"trust_remote_code": True})
 
-# 초기 모델 로드
+# Load initial model
 initial_model, initial_tokenizer = load_model_and_cache(MODELS[st.session_state["model_type"]])
 model = initial_model
 tokenizer = initial_tokenizer
@@ -264,7 +264,7 @@ current_system_prompt = SYSTEM_PROMPTS[st.session_state["model_type"]]
 initial_chat_template = get_chat_template(tokenizer)
 supports_system_role = has_system_role_support(initial_chat_template)
 system_prompt = st.sidebar.text_area(
-    "System 프롬프트",
+    "System Prompt",
     current_system_prompt,
     disabled=not supports_system_role or st.session_state.get("is_generating", False)
 )
@@ -274,12 +274,12 @@ sidebar_actions = st.sidebar.columns(2)
 
 time.sleep(0.05)
 
-if sidebar_actions[0].button("🗑️ 대화 지우기", use_container_width=True, help="이전 대화 내용을 모두 지웁니다.", disabled=st.session_state.get("is_generating", False)):
+if sidebar_actions[0].button("🗑️ Clear Chat", use_container_width=True, help="Clear all previous conversation history", disabled=st.session_state.get("is_generating", False)):
     st.session_state.messages = [{"role": "assistant", "content": assistant_greeting}]
     st.session_state["is_generating"] = False
     st.rerun()
 
-if sidebar_actions[1].button("🔄 계속하기", use_container_width=True, help="마지막 응답을 이어서 계속 생성합니다.", disabled=st.session_state.get("is_generating", False)):
+if sidebar_actions[1].button("🔄 Continue", use_container_width=True, help="Continue generating from the last response", disabled=st.session_state.get("is_generating", False)):
     user_prompts = [msg["content"] for msg in st.session_state.messages if msg["role"] == "user"]
     if user_prompts:
         last_user_prompt = user_prompts[-1]
@@ -308,7 +308,7 @@ if sidebar_actions[1].button("🔄 계속하기", use_container_width=True, help
                                    lambda msg: msg["role"] == "assistant" and msg["content"] != assistant_greeting)
             queue_chat(full_prompt, last_assistant_response)
 
-# 페이지 구성: 채팅 영역과 입력 영역
+# Page layout: chat area and input area
 main_container = st.container()
 messages_container = main_container.container()
 input_section = main_container.container()
@@ -318,7 +318,7 @@ with messages_container:
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             if msg["role"] == "assistant" and msg.get("reasoning_mode") and msg.get("thinking"):
-                with st.expander("🤔 AI의 사고 과정", expanded=False):
+                with st.expander("🤔 AI's Thinking Process", expanded=False):
                     st.markdown(msg["thinking"])
                 st.markdown(msg["content"])
             else:
@@ -329,13 +329,13 @@ with messages_container:
         st.session_state["continuation"] = None
 
 with input_section:
-    # 모델 선택 UI와 채팅 입력을 같은 행에 배치 (모델 선택은 send 전까지만 의미 있음)
+    # Place model selection and chat input in the same row (model selection matters only until send)
     cols = st.columns([2, 8])
     with cols[0]:
-        # 모델 선택은 채팅 입력 옆에 표시되며, send 시에만 반영됩니다.
-        model_options = {"chat": "일반", "reasoning": "사고 과정"}
+        # Model selection appears next to chat input and is applied only when sending
+        model_options = {"chat": "Standard", "reasoning": "Reasoning"}
         pending_model = st.selectbox(
-            "모델 선택",
+            "Model Selection",
             options=list(model_options.keys()),
             format_func=lambda x: model_options[x],
             index=0 if st.session_state["model_type"] == "chat" else 1,
@@ -344,10 +344,10 @@ with input_section:
     with cols[1]:
         input_container = st.container()
         if not st.session_state.get("is_generating", False):  
-                prompt = st.chat_input("메시지를 입력하세요...")
+                prompt = st.chat_input("Type your message here...")
                 if prompt:
                     st.session_state.messages.append({"role": "user", "content": prompt})
-                    # send 시, pending 모델 값을 실제 모델로 반영
+                    # Apply pending model value when sending
                     st.session_state["model_type"] = pending_model
                     message_model, message_tokenizer = get_model(st.session_state["model_type"])
                     message_chat_template = get_chat_template(message_tokenizer)
@@ -368,7 +368,7 @@ with input_section:
                     full_prompt = full_prompt.rstrip("\n")
                     queue_chat(full_prompt)
         else:
-                st.markdown('<div class="disabled-input-container"><span style="color:#868991;">메시지를 입력하세요... (응답 생성 중)</span></div>', unsafe_allow_html=True)
+                st.markdown('<div class="disabled-input-container"><span style="color:#868991;">Type your message here... (Response generating)</span></div>', unsafe_allow_html=True)
                 prompt = None
 
 st.sidebar.markdown("---")
